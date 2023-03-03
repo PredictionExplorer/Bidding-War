@@ -188,5 +188,19 @@ describe("BiddingWar", function () {
       await expect(biddingWar.connect(addr1).donate()).
             to.be.revertedWith("amount to donate must be greater than 0");
     });
+    it("Should not be possible to withdraw from CharityWallet", async function () {
+      const {biddingWar, cosmicSignatureToken, cosmicSignature, charityWallet, cosmicSignatureDAO, randomWalkNFT} = await loadFixture(deployBiddingWar);
+      [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+      await charityWallet.connect(owner).setCharity(addr2.address);
+      expect(await charityWallet.charityAddress()).to.equal(addr2.address);
+      let donationValue = ethers.utils.parseEther("1");
+      await charityWallet.connect(addr1).sendTransaction({value:donationValue});
+      const contractBalance = await ethers.provider.getBalance(charityWallet.address);
+      expect(contractBalance).to.equal(donationValue);
+      const balanceBefore = await ethers.provider.getBalance(addr2.address);
+      await expect(charityWallet.connect(addr1).send());
+      const balanceAfter = await ethers.provider.getBalance(caddr2.address);
+      expect(donationValue).to.equal(balanceAfter.sub(balanceBefore));
+    });
   });
 })
